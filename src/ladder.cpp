@@ -2,72 +2,54 @@
 #include <algorithm>
 using namespace std;
 
-void error(string word1, string word2, string msg)
+void error(string w1, string w2, string msg)
 {
-    cerr << "Error: " << msg << " (\"" << word1 << "\" -> \"" << word2 << "\")" << endl;
+    cerr << msg << endl;
 }
 
-bool edit_distance_within(const string& str1, const string& str2, int d)
+bool edit_distance_within(const string& s1, const string& s2, int d)
 {
-    if (abs((int)str1.size() - (int)str2.size()) > d) {
-        return false;
-    }
-    if (str1.size() == str2.size()) {
-        int diffCount = 0;
-        for (size_t i = 0; i < str1.size(); ++i) {
-            if (str1[i] != str2[i]) {
-                diffCount++;
-                if (diffCount > d) return false;
-            }
+    if (abs((int)s1.size() - (int)s2.size()) > d) return false;
+    int i = 0, j = 0, mismatch = 0;
+    while (i < (int)s1.size() && j < (int)s2.size()) {
+        if (s1[i] != s2[j]) {
+            mismatch++;
+            if (mismatch > d) return false;
+            if (s1.size() > s2.size()) i++;
+            else if (s1.size() < s2.size()) j++;
+            else { i++; j++; }
+        } else {
+            i++;
+            j++;
         }
-        return diffCount == d;
-    } else {
-        const string& s1 = (str1.size() < str2.size()) ? str1 : str2;
-        const string& s2 = (str1.size() < str2.size()) ? str2 : str1;
-        int i = 0, j = 0;
-        int mismatch = 0;
-        while (i < (int)s1.size() && j < (int)s2.size()) {
-            if (s1[i] != s2[j]) {
-                mismatch++;
-                if (mismatch > d) return false;
-                j++;
-            } else {
-                i++;
-                j++;
-            }
-        }
-        if (j < (int)s2.size()) mismatch++;
-        return mismatch == d;
     }
+    mismatch += (s1.size() - i) + (s2.size() - j);
+    return mismatch <= d;
 }
 
-bool is_adjacent(const string& word1, const string& word2)
+bool is_adjacent(const string& w1, const string& w2)
 {
-    return edit_distance_within(word1, word2, 1);
+    return edit_distance_within(w1, w2, 1);
 }
 
 vector<string> generate_word_ladder(const string& begin_word, const string& end_word, const set<string>& word_list)
 {
-    if (word_list.find(end_word) == word_list.end()) {
-        return {};
-    }
+    if (word_list.find(end_word) == word_list.end()) return {};
     queue<vector<string>> ladder_queue;
     ladder_queue.push({begin_word});
     set<string> visited;
     visited.insert(begin_word);
     while (!ladder_queue.empty()) {
-        vector<string> ladder = ladder_queue.front();
+        vector<string> path = ladder_queue.front();
         ladder_queue.pop();
-        const string& last_word = ladder.back();
-        for (const auto& w : word_list) {
-            if (!visited.count(w) && is_adjacent(last_word, w)) {
-                vector<string> new_ladder = ladder;
-                new_ladder.push_back(w);
-                if (w == end_word) {
-                    return new_ladder;
-                }
+        const string& last = path.back();
+        for (auto& w : word_list) {
+            if (!visited.count(w) && is_adjacent(last, w)) {
+                vector<string> new_path = path;
+                new_path.push_back(w);
+                if (w == end_word) return new_path;
                 visited.insert(w);
-                ladder_queue.push(new_ladder);
+                ladder_queue.push(new_path);
             }
         }
     }
@@ -78,7 +60,7 @@ void load_words(set<string> & word_list, const string& file_name)
 {
     ifstream in(file_name);
     if (!in.is_open()) {
-        cerr << "Could not open dictionary file: " << file_name << endl;
+        cerr << "Could not open file." << endl;
         return;
     }
     string w;
@@ -90,12 +72,12 @@ void load_words(set<string> & word_list, const string& file_name)
 
 void print_word_ladder(const vector<string>& ladder)
 {
-    for (size_t i = 0; i < ladder.size(); ++i) {
-        cout << ladder[i];
-        if (i < ladder.size() - 1) {
-            cout << " -> ";
-        }
+    if (ladder.empty()) {
+        cout << "No word ladder found." << endl;
+        return;
     }
+    cout << "Word ladder found: ";
+    for (auto &w : ladder) cout << w << " ";
     cout << endl;
 }
 
@@ -103,11 +85,7 @@ void verify_word_ladder()
 {
     set<string> word_list;
     load_words(word_list, "words.txt");
-    vector<string> r = generate_word_ladder("cat", "dog", word_list);
-    if (!r.empty()) {
-        cout << "size = " << r.size() << endl;
-        print_word_ladder(r);
-    } else {
-        cout << "no ladder found." << endl;
-    }
+    vector<string> r = generate_word_ladder("cat","dog",word_list);
+    if (r.empty()) cout << "No word ladder found." << endl;
+    else print_word_ladder(r);
 }
