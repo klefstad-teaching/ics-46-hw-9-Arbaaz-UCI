@@ -26,13 +26,12 @@ int main(int argc, char* argv[])
         vector<int> path = extract_shortest_path(distances, previous, v);
         if (!path.empty()) {
             for (size_t i = 0; i < path.size(); ++i) {
-                cout << path[i];
-                if (i < path.size() - 1) cout << " ";
+                cout << path[i] << " ";
             }
             cout << endl;
         } else {
             if (v == source) {
-                cout << source << endl;
+                cout << source << " " << endl;
             } else {
                 cout << "No path to vertex " << v << endl;
             }
