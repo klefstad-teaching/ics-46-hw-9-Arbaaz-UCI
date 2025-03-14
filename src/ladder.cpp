@@ -32,26 +32,53 @@ bool is_adjacent(const string& w1, const string& w2)
     return edit_distance_within(w1, w2, 1);
 }
 
+static vector<string> generate_neighbors(const string& word, const set<string>& dict)
+{
+    vector<string> res;
+    for (int i = 0; i < (int)word.size(); i++) {
+        string removed = word.substr(0,i) + word.substr(i+1);
+        if (dict.count(removed)) res.push_back(removed);
+    }
+    for (int i = 0; i < (int)word.size(); i++) {
+        for (char c = 'a'; c <= 'z'; c++) {
+            if (word[i] == c) continue;
+            string replaced = word;
+            replaced[i] = c;
+            if (dict.count(replaced)) res.push_back(replaced);
+        }
+    }
+    for (int i = 0; i <= (int)word.size(); i++) {
+        for (char c = 'a'; c <= 'z'; c++) {
+            string inserted = word.substr(0,i) + c + word.substr(i);
+            if (dict.count(inserted)) res.push_back(inserted);
+        }
+    }
+    sort(res.begin(), res.end());
+    res.erase(unique(res.begin(), res.end()), res.end());
+    return res;
+}
+
 vector<string> generate_word_ladder(const string& begin_word, const string& end_word, const set<string>& word_list)
 {
-    if (word_list.find(end_word) == word_list.end()) return {};
-    vector<string> dict(word_list.begin(), word_list.end());
-    sort(dict.begin(), dict.end());
-    queue<vector<string>> ladder_queue;
-    ladder_queue.push({begin_word});
+    if (!word_list.count(end_word)) return {};
+    set<string> dict = word_list;
+    if (!dict.count(begin_word)) dict.insert(begin_word);
+    queue<vector<string>> q;
+    q.push({begin_word});
     set<string> visited;
     visited.insert(begin_word);
-    while (!ladder_queue.empty()) {
-        vector<string> path = ladder_queue.front();
-        ladder_queue.pop();
+    while (!q.empty()) {
+        vector<string> path = q.front();
+        q.pop();
         string last = path.back();
-        for (auto &w : dict) {
-            if (!visited.count(w) && is_adjacent(last, w)) {
-                vector<string> new_path = path;
-                new_path.push_back(w);
-                if (w == end_word) return new_path;
+        vector<string> nbrs = generate_neighbors(last, dict);
+        for (auto &w : nbrs) {
+            if (!visited.count(w)) {
                 visited.insert(w);
-                ladder_queue.push(new_path);
+                vector<string> newp = path;
+                newp.push_back(w);
+                if (w == end_word) return newp;
+                q.push(newp);
             }
         }
     }
@@ -87,7 +114,7 @@ void verify_word_ladder()
 {
     set<string> word_list;
     load_words(word_list, "words.txt");
-    vector<string> r = generate_word_ladder("cat","dog",word_list);
+    vector<string> r = generate_word_ladder("cat", "dog", word_list);
     if (r.empty()) cout << "No word ladder found." << endl;
     else print_word_ladder(r);
 }
