@@ -32,51 +32,26 @@ bool is_adjacent(const string& w1, const string& w2)
     return edit_distance_within(w1, w2, 1);
 }
 
-static vector<string> generate_neighbors(const string& word, const set<string>& dict)
-{
-    vector<string> result;
-    for (int i = 0; i < (int)word.size(); i++) {
-        string del = word.substr(0,i) + word.substr(i+1);
-        if (dict.find(del) != dict.end()) result.push_back(del);
-    }
-    for (int i = 0; i < (int)word.size(); i++) {
-        for (char c = 'a'; c <= 'z'; c++) {
-            if (word[i] == c) continue;
-            string rep = word;
-            rep[i] = c;
-            if (dict.find(rep) != dict.end()) result.push_back(rep);
-        }
-    }
-    for (int i = 0; i <= (int)word.size(); i++) {
-        for (char c = 'a'; c <= 'z'; c++) {
-            string ins = word.substr(0,i) + c + word.substr(i);
-            if (dict.find(ins) != dict.end()) result.push_back(ins);
-        }
-    }
-    return result;
-}
-
 vector<string> generate_word_ladder(const string& begin_word, const string& end_word, const set<string>& word_list)
 {
     if (word_list.find(end_word) == word_list.end()) return {};
-    set<string> dict = word_list;
-    if (dict.find(begin_word) == dict.end()) dict.insert(begin_word);
-    queue<vector<string>> q;
-    q.push({begin_word});
+    vector<string> dict(word_list.begin(), word_list.end());
+    sort(dict.begin(), dict.end());
+    queue<vector<string>> ladder_queue;
+    ladder_queue.push({begin_word});
     set<string> visited;
     visited.insert(begin_word);
-    while (!q.empty()) {
-        vector<string> path = q.front();
-        q.pop();
+    while (!ladder_queue.empty()) {
+        vector<string> path = ladder_queue.front();
+        ladder_queue.pop();
         string last = path.back();
-        vector<string> neighbors = generate_neighbors(last, dict);
-        for (auto &n : neighbors) {
-            if (!visited.count(n)) {
-                visited.insert(n);
+        for (auto &w : dict) {
+            if (!visited.count(w) && is_adjacent(last, w)) {
                 vector<string> new_path = path;
-                new_path.push_back(n);
-                if (n == end_word) return new_path;
-                q.push(new_path);
+                new_path.push_back(w);
+                if (w == end_word) return new_path;
+                visited.insert(w);
+                ladder_queue.push(new_path);
             }
         }
     }
